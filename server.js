@@ -58,5 +58,22 @@ const server = http.createServer((req,res) => {
   if (!f.startsWith(path.join(__dirname,'public'))) return send(403,{error:'forbidden'});
   fs.readFile(f,(e,d)=>e?send(404,{error:'not found'}):(res.writeHead(200,{'Content-Type':(MIME[path.extname(f)]||'application/octet-stream')+'; charset=utf-8'}),res.end(d)));
 });
-if (require.main===module) { refresh(); setInterval(refresh, REFRESH_MS); server.listen(PORT,()=>console.log('Mudassir News on http://localhost:'+PORT)); }
+
+if (require.main === module) {
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Mudassir News listening on port ${PORT}`);
+
+    const runRefresh = async () => {
+      try {
+        await refresh();
+      } catch (err) {
+        console.error('[refresh error]', err);
+      }
+    };
+
+    runRefresh();
+    setInterval(runRefresh, REFRESH_MS);
+  });
+}
+
 module.exports = { server, query, state, CATEGORIES };
