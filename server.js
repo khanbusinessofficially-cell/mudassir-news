@@ -15,7 +15,12 @@ async function fetchSource(s) {
   } catch (e) { st.error = String(e.message||e); st.at = new Date().toISOString(); return null; } // a failed source never crashes the run
 }
 async function refresh() {
-  const results = await Promise.all(SOURCES.map(fetchSource));
+  const results = await Promise.all(SOURCESconst results = await Promise.all(SOURCES.map(fetchSource));
+console.log('[DEBUG] Refresh results:', results.map((r, i) => ({
+  source: SOURCES[i].id,
+  count: Array.isArray(r) ? r.length : 0,
+  failed: r === null
+})));.map(fetchSource));
   const fresh = results.flat().filter(Boolean);
   const fetchedAt = new Date().toISOString();
   fresh.forEach(a => a.fetchedAt = fetchedAt);
