@@ -14,26 +14,33 @@ async function fetchSource(s) {
     return items;
   } catch (e) { st.error = String(e.message||e); st.at = new Date().toISOString(); return null; } // a failed source never crashes the run
 }
+
 async function refresh() {
-  const results = await Promise.all(SOURCESconst results = await Promise.all(SOURCES.map(fetchSource));
-console.log('[DEBUG] Refresh results:', results.map((r, i) => ({
-  source: SOURCES[i].id,
-  count: Array.isArray(r) ? r.length : 0,
-  failed: r === null
-})));.map(fetchSource));
+  const results = await Promise.all(SOURCES.map(fetchSource));
+
+  console.log('[DEBUG] Refresh results:', results.map((r, i) => ({
+    source: SOURCES[i].id,
+    count: Array.isArray(r) ? r.length : 0,
+    failed: r === null
+  })));
+
   const fresh = results.flat().filter(Boolean);
   const fetchedAt = new Date().toISOString();
   fresh.forEach(a => a.fetchedAt = fetchedAt);
-  // keep previously cached articles from sources that failed this round
-  const failed = new Set(SOURCES.filter((_,i)=>!results[i]).map(s=>s.name));
-  const kept = state.articles.filter(a => failed.has(a.publisher) && !fresh.some(f=>f.url===a.url));
-  const cutoff = Date.now() - 7*864e5;
+
+  const failed = new Set(SOURCES.filter((_, i) => !results[i]).map(s => s.name));
+  const kept = state.articles.filter(a => failed.has(a.publisher) && !fresh.some(f => f.url === a.url));
+  const cutoff = Date.now() - 7 * 864e5;
+
   state.articles = dedupe([...fresh, ...kept])
     .filter(a => !a.publishedAt || Date.parse(a.publishedAt) > cutoff)
-    .sort((a,b) => (Date.parse(b.publishedAt)||0) - (Date.parse(a.publishedAt)||0)).slice(0, 1500);
+    .sort((a, b) => (Date.parse(b.publishedAt) || 0) - (Date.parse(a.publishedAt) || 0))
+    .slice(0, 1500);
+
   state.lastRun = fetchedAt;
   console.log(`[refresh] ${state.articles.length} articles; ${results.filter(Boolean).length}/${SOURCES.length} sources ok`);
 }
+
 
 function query(u) {
   const cat = u.searchParams.get('category'), q = (u.searchParams.get('q')||'').toLowerCase().trim().slice(0,100);
